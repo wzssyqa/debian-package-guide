@@ -1,0 +1,221 @@
+需要安装的包
+sudo apt-get install devscripts dh-make git-buildpackage
+
+
+包的初始化 dh_make:
+1. 从上游下载得到源码包：gwrite-0.5.1.tar.gz
+2. 解压开 tar -zxvf gwrite-0.5.1.tar.gz
+   注意，解压得到的应该是一个文件夹，里边直接就是各种文件，别文件夹套文件夹了
+   也别直接一大堆文件就出现在当前文件夹下
+3. 将解压得到的文件重新命名为 gwrite-0.5.1，此步是必须的！！！！！
+   当然，如果直接就是这个名字了，也可以不用改了 :)
+4. cd gwrite-0.5.1
+5. dh_make -f ../gwrite-0.5.1.tar.gz
+   -f 指定上游tar包
+   这之后，根据 gwrite-0.5.1.tar.gz 大小的不同，可能会复制，也可能是软链接到
+   gwrite_0.5.1.orig.tar.gz
+   大的上游tar包会软链接，小的会复制。
+6. 注意到生成了一个debian文件夹
+
+
+
+下载仓库中现有的软件包：
+dget http://ftp.cn.debian.org/debian/pool/main/g/gwrite/gwrite_0.5.1-2.dsc
+# 当然对于公司内部也可以
+dget http://mirrors/debian/pool/main/g/gwrite/gwrite_0.5.1-2.dsc
+这个文件是Aron对于 gwrite_0.5.1.orig.tar.gz 和 gwrite_0.5.1-2.debian.tar.gz 的签名。
+如果机器上有Aron的公钥，就会自动解压，如果没有就不会自动解压。
+
+如果没有解压就
+dpkg-source -x gwrite_0.5.1-2.dsc
+
+如果要获取该包最新的进展，建议从下面在 control 中提到的版本控制(git, hg 等)中获取。
+比如本例中，所有最新的进展都可以这样获取：
+   git clone git://git.debian.org/collab-maint/gwrite.git
+
+gwrite可以作为最简单的打包例子看待，其简单之处在于 dh 直接支持了它的安装脚本。
+这样rules可以直接为空了。
+
+Debian中的几个文件：
+
+*****changelog*****
+gwrite (0.5.1+hg20110815-1) experimental; urgency=low
+
+  * Upstream hg snapshot, 20110815:
+    commit 7f717528e09fba9925fcc5460843e40fd4603eb0
+  * debian/pycompat: removed.
+  * debian/compat: set to 8.
+  * debian/control: 
+    + Add Vcs-* fields.
+    - Remove python-support, add python (>= 2.6.6-3~) in favor of
+      dh_python2.
+  * debian/rules:
+    + Use dh_python2.
+
+ -- Aron Xu <aron@debian.org>  Tue, 08 Nov 2011 19:26:56 +0800
+ 
+是Debian包的变更日志。特别需要注意的地方是：每一行的缩进不能用 tab，只能用一个个的空格。
+推荐使用 dch 命令来处理
+           dch -v 0.5.2-1
+关于版本号的比较：
+	1+1 > 1   1~1 < 1
+一般的包需要放在unstable。因为此版本有明显的Bug，所以暂时放到experimental。
+urgency=low 表示包的紧急程度，一般都是low，如果是比较紧急的问题，可以换成比较高的紧急程度。
+
+
+*****compat*****
+8
+包的兼容版本，一般就是debhelper的大版本号，当前版本是8。
+
+
+*****control*****
+Source: gwrite  ### 源码包名
+Section: editors  ### 包的种类：文本编辑器 http://packages.debian.org/source/sid/
+Priority: optional  ### 优先级，一般为 optional
+Maintainer: Aron Xu <aron@debian.org> ### 维护者
+Build-Depends: debhelper (>= 8), python (>= 2.6.6-3~),python-setuptools,
+ python-distutils-extra   ### 编译依赖：编译这个软件的时候需要装的包
+Standards-Version: 3.9.2  ### Debian Policy 的版本
+Homepage: http://code.google.com/p/gwrite  ### 上游的网址
+Vcs-Browser: http://git.debian.org/?p=collab-maint/gwrite.git  ### 可以用浏览器看的版本管理
+Vcs-Git: git://git.debian.org/collab-maint/gwrite.git  ### Debian包的托管网址，也可以是SVN等，推荐使用Git
+          ######### 如果要获取该包最新的更新，可以在此Git获取。
+
+Package: gwrite  ### 二进制包名
+Architecture: all  ### 架构，可以用的 all (各种处理器架构上没有区别) any (全部架构) linux-any i386 amd64 等等
+                   ### 注意，如果写多个架构的时候，是空格分隔，而不是逗号...
+Depends: ${python:Depends}, ${misc:Depends}, python, python-gtk2, python-jswebkit, python-webkit, mimetex, wv 
+         ### 二进制包的依赖：编译型语言产生的共享库，可执行程序等，可以自动产生依赖  ${shlibs:Depends}
+         ### 其它依赖需要自己写在这里
+Description: simple GTK+ HTML5 rich text editor
+ gWrite is a simple GTK+ HTML5 WYSIWYG editor, focusing on writing
+ and simple text formating. It can automatically generate a table of
+ contents based on the document structure. 
+ .  #### 注意这个点，段内不能换行，所以需要在这里加个点，新立得什么的，不会显示这个点。
+ It aims to be lighter than OOWrite & OOWeb, and to be as useful as them.
+ 
+ 
+n段，第一段关于源码包，第二段，二进制包[，第三段，第二个二进制包·]
+****每一段内部不能有换行！！！！！****
+
+*****copyright*****
+Format: http://dep.debian.net/deps/dep5/
+Upstream-Name: gwrite
+Upstream-Contact: Jiahua Huang <jhuangjiahua@gmail.com>
+                  Aron Xu <happyaron.xu@gmail.com>
+Source: http://code.google.com/p/gwrite/downloads/list
+
+License: LGPL-3+
+ This is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as published by the
+ Free Software Foundation; either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This library is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+ for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, write to the
+ Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301  USA.
+ .
+ See /usr/share/common-licenses/LGPL-3 on your debian system.
+
+Files: *
+Copyright: 2010, 2011 Jiahua Huang & Aron Xu
+License: LGPL-3+
+
+Files: debian/*
+Copyright: 2010, 2011 Aron Xu <aron@debian.org>
+License: LGPL-3+
+
+Files: gwrite.png
+Comment: http://ftp.gnome.org/pub/gnome/sources/gtk+/2.18/gtk+-2.18.5.tar.bz2
+Copyright: 2009 The GTK+ Team
+License: LGPL-2+
+ This is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as published by the
+ Free Software Foundation; either version 2 of the License, or (at your
+ option) any later version.
+ .
+ This library is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+ for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, write to the
+ Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301  USA.
+ .
+ See /usr/share/common-licenses/LGPL-2 on your debian system.
+
+DEP5：写清楚每个文件的版权、授权
+
+
+*****docs****
+TODO
+
+由dh_installdocs使用，这里的意思是，把TODO这个文件作为文档安装在
+/usr/share/doc/${FIRSR_PACKAGE_NAME}/ 下
+当然这里也可以通过在rules适当的语句来安装到特定的地方，但是这样更方便。
+后边可以看到，很多dh_*命令都有自己的*命令文件*。
+
+*****gwrite.1*****
+Debian要求所以安装到/bin或者/usr/bin下的文件都有对应的man，如果上游没有提供
+就需要自己写一个。
+
+*****manpages*****
+debian/gwrite.1
+
+由dh_installman使用，制定哪几个文件作为manpages安装，会根据后缀的.1,.2 等分类。
+如果上游的安装脚本，已经可以正常安装到正确的地方，就不需要这个了。
+*整个的默认路径都是debian目录的上一层目录*。
+
+
+*****watch*****
+监视报告上游的新版本的脚本文件，可以使用uscan。
+牵涉到正则等，这里不详细说了。
+
+
+*****rules*****
+#!/usr/bin/make -f
+%:
+	dh $@ --with python2
+override_dh_auto_clean:
+	rm -rf build
+	rm -f po/*.pot
+	dh_auto_clean
+	
+一个Makefile文件，设置可以用它自动生成control等。这个文件，必须要有可执行权限！！！
+
+#!/usr/bin/make -f  #### 所有脚本都带的东西，表示用make来解释执行。
+
+%:
+	dh $@ --with python2 ##### 用来表示一串命令，会按照这个序列执行命令
+	      ##### 具体参考 http://www.debian.org/doc/manuals/maint-guide/dreq.zh-cn.html
+	      ##### 4.4 节
+	      #####  此处可以使用 --with 选项。
+	      ##### 此处的 --with python2 是指让dh系列命令使用 dh_python2
+	      #### 而不是已经废弃的 python-support 或 python-centrel 来处理python模块。
+	      ##### 将来，此选项会成为默认，到时就不再需要显式写出 --with python2
+
+override_dh_auto_clean:
+	rm -rf build
+	rm -f po/*.pot
+	dh_auto_clean
+###### 不使用默认的 dh_auto_clean ，而是替换成下面的样子。
+###### Aron这里是为了清除几个编译时产生，而上游的clean脚本(make clean)没有清除干净的文件。
+###### 这是上游的bug！！！！！
+###### .
+###### 当然如果不想要这几句，也可以使用 debian/clean文件
+###### debian/clean 由 dh_clean 来使用。(echo "build\npo/*.pot\n" >debian/clean)
+###### .
+###### dh_auto_clean 和 dh_clean 是有分工的：
+######        dh_auto_clean 负责上游产生的临时文件
+######        dh_clean 负责debian自己产生的临时文件
+###### Aron这种做法是合理的，符合逻辑：该谁干的，谁干
+
+
