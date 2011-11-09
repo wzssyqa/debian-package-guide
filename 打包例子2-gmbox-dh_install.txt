@@ -1,0 +1,243 @@
+本节以GMbox为例子说明dh_install、dh_link 的使用，
+以及简单的python包的打包方法。
+
+GMbox是一个从music.google.cn下载并播放音乐的工具，
+其主页为：http://code.google.com/p/gmbox/
+Debian打包托管于：
+ Vcs-git: git://git.debian.org/git/chinese/gmbox.git
+ Vcs-Browser: http://git.debian.org/?p=chinese/gmbox.git
+ 
+GMbox主要包括四个部分：
+	gmbox-gtk.py     一个简单的启动程序
+	gmbox/*          与界面有关的代码
+	libgmbox/*       与协议有关的代码
+	data/*           其它一些数据文件，比如图标
+
+GMbox自身没有提供安装脚本，这样直观的想，
+就是要在rules中用 cp 将文件直接复制到需要的地方即可，
+当然这是正确的选择，但是debhelper通过给了我们更容易使用的工具
+    dh_install
+
+下载Debian中现有的gmbox源码包的方法是：
+   dget http://ftp.cn.debian.org/debian/pool/contrib/g/gmbox/gmbox_0.4+svn258-1.dsc
+如果，机器上已经安装有YunQiang Su的公钥，会自动解压，如果没有需要手动解压：
+   dpkg-source -x gmbox_0.4+svn258-1.dsc
+
+
+debian 目录中几个文件的分析：
+
+*****changelog*****
+略，再次提醒下，可以使用
+  dch -v 0.4+svn258-1
+来编辑文件。
+dch 会根据 VISUAL, EDITOR 两个环境变量来选择编辑器。
+如果默认的编辑器不是偏好的编辑器，可以设置这两个环境变量：
+VISUAL 会比 EDITOR 优先级高。
+
+
+*****clean*****
+*.pyc
+*/*pyc
+
+此软件包正常来说没有什么需要手动清除的临时问题。
+可是这个软件是“绿色软件”，可以直接在顶层目录中使用gmbox-gtk.py来运行，
+如果这样运行了就会留下一些python运行时的临时文件，我们需要清除掉它们。
+
+*****compat*****
+7
+
+此文件标明兼容的debhelper的版本。因为GMbox是以前打包的程序，
+尚未更新，故兼容版本依然是7，下次更新会更新到当前版本8。
+新的软件包建议使用当前的版本：8。
+
+*****control*****
+Source: gmbox
+Section: contrib/sound
+Priority: optional
+Maintainer: Debian Chinese Team <chinese-developers@lists.alioth.debian.org>
+Uploaders: Aron Xu <aron@debian.org>, YunQiang Su <wzssyqa@gmail.com>
+DM-Upload-Allowed: yes
+Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~)
+Standards-Version: 3.9.2
+Homepage: http://code.google.com/p/gmbox/
+Vcs-git: git://git.debian.org/git/chinese/gmbox.git
+Vcs-Browser: http://git.debian.org/?p=chinese/gmbox.git
+
+Package: gmbox
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-gtk2
+Description: google.cn music box
+ This program can download and play music from music.google.cn using
+ internal or external applications (such as wget for download and mplayer
+ for playing, and of course you can set parameters).
+ .
+ music.google.cn is a service provided by Google China and the service
+ is available and legal only in China mainland.
+ 
+对比gWrite中的control文件，我们会发现有几处不同：
+Section: contrib/sound： 
+    此处多了一个 contrib/ 表示此软件应该放到Debian的contrib部分下。
+    Debian分为main, contrib, non-free 三个部分：
+    	main是符合《Debian自由软件指针》(dfsg)的软件，即自由软件。
+    	contrib中的软件本身是开源软件，但是却需要依赖某些非开源的文件、服务等才能正常运行。
+    	non-free 是可以自由、免费分发的非自由软件，其中包括一些源代码可以获得，
+    	        但是许可协议和dfsg不兼容的软件。
+    关于DFSG的具体内容请阅读：http://www.debian.org/social_contract
+    在这个字段中，如果是main，可以省略；contrib 和 non-free 不得省略。
+
+Maintainer: Debian Chinese Team <chinese-developers@lists.alioth.debian.org>
+此处的维护着，不是特定的人，而是一个团队，表示这个软件不是由一个特定的维护，
+而是由一个团队维护。这个邮件地址，应该是这个团队的邮件列表。
+***此字段不能写多个人或者多个团队***。
+
+Uploaders: Aron Xu <aron@debian.org>, YunQiang Su <wzssyqa@gmail.com>
+此字段表示授权可以上传此软件包的人。
+
+DM-Upload-Allowed: yes
+此字段表示允许DM上传。
+
+对于以上的 Maintainer, Uploaders 和 DM-Upload-Allowed 三个大家可以能会有一些迷惑，
+在此做一些简要的介绍。
+Debian包维护者分为三类：
+	Debian Developer(DD)    允许上传所有的包
+	Debian Maintainer(DM)   允许上传授权的包
+	Sponsored Maintainer    自己不能上传包，需要找一个DD上传自己的包
+这样就可以看出此包：
+	由Debian中文团队维护。
+	允许Aron Xu 和 YunQiang Su上传，其中Aron Xu是DD，YunQiang Su是DM。
+	允许Uploaders字段中的DM，即YunQiang Su上传此包。
+对于其它一些情况：
+   1. 假设另外一个叫Li Daobing 的DD对此包有意见，进行了一些修改，他应该首先和
+      Aron Xu和/或YunQiang Su联系(私下通过邮件等，或者通过bug报告)，提交他的补丁。
+      如果Aron Xu和YunQiang Su都长期不理他，而他认为这个补丁非常重要，
+      可以决定使用“非维护者上传”(NMU)这个流程直接上传此包，
+      版本号中，需要带有nmu字样，这会被看作是对Aron Xu 和 YunQiang Su的示威。
+   2. 假设一个叫Asia He的DM对此包有意见，进行了一些修改，同样也需要提交给
+      Aron Xu和/或YunQiang Su，如果长时间没有得到回应，他是没有权限直接上传的，
+   3. 作为其他人，能做的就只有提交bug报告，以及鼓动某个DD去NUM此包。
+   
+Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~)
+   此字段表示编译本软件包时所需要的软件。
+   因为debhelper自7.0.50后提供了override式的rules写作方式，故 debhelper (>= 7.0.50~)
+   python包自2.6.6-3开始提供现在推荐使用dh_python2,所以，需要指定python的版本。
+   可能已经注意到版本号之后的小尾巴(~)：这可以保证如下版本也符合要求
+        7.0.50~beta1 7.0.50~lenny1 
+   注意根据前面的介绍：
+        7.0.50 > 7.0.50~beta2 > 7.0.50~beta1 > 7.0.50~alpha > 7.0.49.99999999999
+
+*****copyright*****
+此软件包的copyright是历史遗留，并没有是DEP5格式，在以后的更新中，需要更新到DEP5格式
+
+*****gmbox.desktop*****
+[Desktop Entry]
+Name=gmbox
+Comment=Google Music Box
+Comment[zh_CN]=谷歌音乐盒
+Comment[zh_HK]=谷歌音樂盒
+Comment[zh_TW]=谷歌音樂盒
+Exec=gmbox
+Icon=gmbox
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+StartupNotify=true
+Categories=AudioVideo;Audio;Player;GTK;
+
+此文件被称为“桌面项”文件，提供的就是就是大家平常使用的菜单中的各种“快捷方式”。
+因为上游没有提供这个文件，我们打包时必须提供这个文件：大部分用户不会想每次都从命令行
+启动一个图形界面的程序。
+
+Name=gmbox ### 名称
+### 各种不同语言的显示字符串，即在简体中文环境中，大家会从菜单中看 “谷歌音乐盒” 
+### 繁体中文环境下会看到“谷歌音樂盒”
+Comment=Google Music Box
+Comment[zh_CN]=谷歌音乐盒
+Comment[zh_HK]=谷歌音樂盒
+Comment[zh_TW]=谷歌音樂盒
+Exec=gmbox ### 点击这个菜单项时执行的命令
+Icon=gmbox ### 此菜单项对应的图标，可以是绝对路径，也可以是这样的简写。
+           ### 如果是简写，系统将会将会去 /usr/share/pixmaps/ 
+           ### 下寻找与次名称符合的图标。
+Categories=AudioVideo;Audio;Player;GTK;  ### 指定软件的分类，
+           ### 我们将会在“影音”中看到这个软件。
+
+关于桌面项文件的规范，请参考：
+   http://standards.freedesktop.org/desktop-entry-spec/latest/index.html
+
+*****gmbox.manpages*****
+debian/gmbox.1
+
+如gWrite例子中提到的，Debian要求所有的可执行程序必须有手册页，
+如果上游没有提供，我们必须自己提供。
+或许可以注意到，此处与gWrite中有些许不同：gWrite中，使用的文件名是manpages，没有前缀。
+对于只生成一个二进制包(通常所说的安装包)的源码包中，有没有前缀都是可以的。
+但是对于需要生成多个二进制包的源码包中，可以通过使用二进制包名作为前缀，
+来指定这个手册页属于哪个二进制包。
+这个规则同样适用于其它大部分使用*命令文件*的dh_*命令。
+
+*****gmbox.install****
+*.py usr/share/gmbox/
+gmbox/* usr/share/gmbox/gmbox
+libgmbox/* usr/share/pyshared/libgmbox
+data/* usr/share/gmbox/data
+debian/gmbox.desktop usr/share/applications
+
+此文件由dh_install命令使用，指定向 gmbox 包中的什么位置安装什么文件
+文件的格式是 
+		文件 文件的目标路径
+*.py usr/share/gmbox/   #### 将顶层目录的 *.py 文件安装到 usr/share/gmbox/
+                        #### usr 前面的 / 可以有，也可以省略。
+gmbox/* usr/share/gmbox/gmbox #### 将gmbox/* 安装到 usr/share/gmbox/gmbox 目录
+              ### 因为python脚本是体系结构无关的文件，所以我们需要将它们安装
+              ### /usr/share 下。
+libgmbox/* usr/share/pyshared/libgmbox 
+              ### 对于用纯python写的库文件，需要安装到 usr/share/pyshared/
+              ### 然后由 dh_python2 做进一步的处理
+              ### 这样安装以后，其它python程序就可以使用import libgmbox 来使用此库
+data/* usr/share/gmbox/data  此文件安装到此处，是为了保证软件的相对路径关系
+debian/gmbox.desktop usr/share/applications
+              ### 根据 freedesktop.org 制定的标准，
+              ### 桌面项文件需要安装到usr/share/applications
+
+
+*****gmbox.links*****
+usr/share/gmbox/gmbox-gtk.py usr/bin/gmbox
+usr/share/gmbox/data/pixbufs/gmbox.png usr/share/pixmaps/gmbox.png
+
+此文件由dh_links命令使用，在软件包内部做软链接(文件对文件，目录对目录)：
+将 usr/share/gmbox/gmbox-gtk.py 链接 usr/bin/gmbox
+将 usr/share/gmbox/data/pixbufs/gmbox.png 链接到 usr/share/pixmaps/gmbox.png
+可以使用这样的绝对路径，也可以使用相对路径，其行为符合 ln -s 命令的行为
+
+****README.Debian*****
+gmbox for Debian
+----------------
+
+GMbox is based on the service provided by music.google.cn, the program
+itself is totally free software but the service is only available and
+legal in China mainland. Please don't use the service if you are not in
+the region.
+
+ -- Aron Xu <aron@debian.org>  Thu, 09 Jun 2011 17:24:01 +0800
+
+写关于此Debian需要说明的一些事情，包括：你不得不使用了某些不常用的打包方法;
+为了满足Debian对自由软件的要求，删除/重写了某些文件等等。
+
+
+*****rules*****
+#!/usr/bin/make -f
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+%:
+	dh $@ --with python2
+	
+通过使用上述的一些“命令文件”，我们成功得达到了让rules变“空”的目的。
+注意，我们可以在rules中加入 
+          export DH_VERBOSE=1
+来让编译的时候显示更多的细节。
+
+
+
+最后，运行
+    debuild
+试试吧
