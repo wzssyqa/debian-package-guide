@@ -177,8 +177,11 @@ debian/gmbox.1
 对于只生成一个二进制包(通常所说的安装包)的源码包中，有没有前缀都是可以的。
 但是对于需要生成多个二进制包的源码包中，可以通过使用二进制包名作为前缀，
 来指定这个手册页属于哪个二进制包。
-这个规则同样适用于其它大部分使用*命令文件*的dh_*命令：包括dh_install, dh_installdocs,
-dh_installchangelogs, dh_links 等等。
+这个规则同样适用于其它大部分使用*命令文件*的dh_*命令：
+例如对应 gmbox 的dh_install的文件是 gmbox.install;
+例如对应 gmbox 的dh_installdocs 的文件是 gmbox.docs
+例如对应 gmbox 的dh_installchangelogs 的文件是 gmbox.changelog 和 gmbox.NEWS
+等等。
 
 *****gmbox.install****
 *.py usr/share/gmbox/
