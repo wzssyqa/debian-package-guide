@@ -49,6 +49,7 @@ VISUAL 会比 EDITOR 优先级高。
 此文件标明兼容的debhelper的版本。因为GMbox是以前打包的程序，
 尚未更新，故兼容版本依然是7，下次更新会更新到当前版本8。
 新的软件包建议使用当前的版本：8。
+更新软件包时，应该将其修改为当前debhelper的大版本号。
 
 *****control*****
 Source: gmbox
@@ -94,7 +95,7 @@ Uploaders: Aron Xu <aron@debian.org>, YunQiang Su <wzssyqa@gmail.com>
 此字段表示授权可以上传此软件包的人。
 
 DM-Upload-Allowed: yes
-此字段表示允许DM上传。
+此字段表示允许DM上传。一般交流时简称为DMUA。
 
 对于以上的 Maintainer, Uploaders 和 DM-Upload-Allowed 三个大家可以能会有一些迷惑，
 在此做一些简要的介绍。
@@ -111,19 +112,22 @@ Debian包维护者分为三类：
       Aron Xu和/或YunQiang Su联系(私下通过邮件等，或者通过bug报告)，提交他的补丁。
       如果Aron Xu和YunQiang Su都长期不理他，而他认为这个补丁非常重要，
       可以决定使用“非维护者上传”(NMU)这个流程直接上传此包，
-      版本号中，需要带有nmu字样，这会被看作是对Aron Xu 和 YunQiang Su的示威。
+      版本号中，需要带有nmu字样，这会有助于提高整个debian软件包的质量。
    2. 假设一个叫Asia He的DM对此包有意见，进行了一些修改，同样也需要提交给
-      Aron Xu和/或YunQiang Su，如果长时间没有得到回应，他是没有权限直接上传的，
-   3. 作为其他人，能做的就只有提交bug报告，以及鼓动某个DD去NUM此包。
+      Aron Xu和/或YunQiang Su，如果长时间没有得到回应，他是没有权限直接上传的：
+      一个DM要能上传一个包须满足两个条件：包标注了 DMUA；该DM在此软件包的Uploaders字段中。
+   3. 除了所有有上传权限的DD以及在Uploaders中标注了的DM之外的作为其他人，
+      能做的就只有提交bug报告，以及推动某个DD去NMU此包。
    
 Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~)
    此字段表示编译本软件包时所需要的软件。
    因为debhelper自7.0.50后提供了override式的rules写作方式，故 debhelper (>= 7.0.50~)
    python包自2.6.6-3开始提供现在推荐使用dh_python2,所以，需要指定python的版本。
    可能已经注意到版本号之后的小尾巴(~)：这可以保证如下版本也符合要求
-        7.0.50~beta1 7.0.50~lenny1 
+        7.0.50~beta1 7.0.50~bpo60+1 
    注意根据前面的介绍：
         7.0.50 > 7.0.50~beta2 > 7.0.50~beta1 > 7.0.50~alpha > 7.0.49.99999999999
+   注意：在将 compat 升级为8的时候，此处对 debhelper 的编译依赖也需要同步升级到8。
 
 *****copyright*****
 此软件包的copyright是历史遗留，并没有是DEP5格式，在以后的更新中，需要更新到DEP5格式
@@ -173,7 +177,8 @@ debian/gmbox.1
 对于只生成一个二进制包(通常所说的安装包)的源码包中，有没有前缀都是可以的。
 但是对于需要生成多个二进制包的源码包中，可以通过使用二进制包名作为前缀，
 来指定这个手册页属于哪个二进制包。
-这个规则同样适用于其它大部分使用*命令文件*的dh_*命令。
+这个规则同样适用于其它大部分使用*命令文件*的dh_*命令：包括dh_install, dh_installdocs,
+dh_installchangelogs, dh_links 等等。
 
 *****gmbox.install****
 *.py usr/share/gmbox/
@@ -226,13 +231,12 @@ the region.
 
 *****rules*****
 #!/usr/bin/make -f
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+
 %:
 	dh $@ --with python2
 	
 通过使用上述的一些“命令文件”，我们成功得达到了让rules变“空”的目的。
-注意，我们可以在rules中加入 
+注意，我们可以在rules中 "%:" 的上边加入 
           export DH_VERBOSE=1
 来让编译的时候显示更多的细节。
 
