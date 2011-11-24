@@ -1,0 +1,63 @@
+本节主要介绍编译型包的打包，
+
+主要设计到的命令有
+dh_auto_configure
+dh_auto_build
+dh_auto_install
+dh_auto_test
+
+1. 关于OpenFetion
+OpenFetion是一个用C语言编写的飞信软件，它需要安装的文件有一个二进制可执行文件，
+以及一些数据文件。
+
+2. 直接编译安装OpenFetion
+  要想直接编译安装OpenFetion，需要进入源码目录，依次执行
+  mkdir build
+  cd build
+  cmake ..
+  make
+  make install
+  这样，OpenFetion就会安装到/usr/local下，文件会分布与/usr/local/bin
+  和 /usr/local/share
+
+3. 关于制作OpenFetion的Deb包
+  我们上边提到的4个dh命令，会依次调用
+  dh_auto_configure  mkdir build; cd build; cmake .. 
+                        （此处实际运行中并不会真的是build,一般会是 obj-i386-linux-gnu 这种样子）
+  dh_auto_build       make
+  dh_auto_install    make install 
+  dh_auto_test       make test
+
+  实际的打包中，我们就是利用这样的方法来进行配置、编译、安装和测试。
+
+  下面依次介绍每个命令做的具体工作：
+
+dh_auto_configure  调用 cmake 来执行配置工作，检查依赖是否安装，使用什么选项进行编译
+  通过看编译时的日志我们可以看到
+   dh_auto_configure
+	mkdir -p obj-x86_64-linux-gnu
+	cd obj-x86_64-linux-gnu
+	cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_VERBOSE_MAKEFILE=ON
+   
+   dh_auto_configure 创建一个新目录，并在新目录中以 
+        -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_VERBOSE_MAKEFILE=ON
+    参数执行 cmake
+    
+dh_auto_build
+	cd obj-x86_64-linux-gnu
+	make -j1
+   dh_auto_build 以 -j1 为参数执行 make
+   
+dh_auto_install
+   /usr/bin/cmake -P cmake_install.cmake
+   实际中，会使用 make install DESTDIR=$(CURDIR)/debian/tmp
+   来将文件安装到 debian/tmp
+   只生成一个二进制包时会是 debian/BIN_PACKAGE_NAME
+
+dh_auto_test
+   会调用 make test
+
+这样如果一切是理想的即完成了打包
+如果安装的文件有多余，可以在rules文件里删除多余的文件。
+
+在经过其它一些处理之后，会使用dh_builddeb来调用dpkg-deb把debian/openfetion目录生成最终的deb包。
